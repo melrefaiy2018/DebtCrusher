@@ -1,7 +1,5 @@
 import { CreditCard, FinancialProfile } from '../types';
 
-const DB_KEY = 'debtcrusher_db_v1';
-
 interface DatabaseSchema {
   profile: FinancialProfile;
   cards: Record<string, CreditCard>;
@@ -14,71 +12,87 @@ const DEFAULT_DB: DatabaseSchema = {
   lastUpdated: Date.now(),
 };
 
-// In-memory cache to reduce synchronous localStorage reads
+// In-memory cache
 let dbCache: DatabaseSchema | null = null;
 
 export const DB = {
   /**
-   * Loads the entire database from local storage or memory cache.
+   * Loads the entire database from the file system API.
    */
-  loadRaw: (): DatabaseSchema => {
-    if (dbCache) return dbCache;
+  loadAsync: async (): Promise<DatabaseSchema> => {
+    if (dbCache) {
+        console.log("[DB] Loading from cache", dbCache);
+        return dbCache;
+    }
 
     try {
-      const stored = localStorage.getItem(DB_KEY);
-      if (!stored) {
-        dbCache = DEFAULT_DB;
-        return DEFAULT_DB;
+      const response = await fetch('/api/db');
+      if (!response.ok) throw new Error('Failed to fetch DB');
+      
+      const data = await response.json();
+      
+      // If empty object (new file), return default
+      if (!data || Object.keys(data).length === 0) {
+         dbCache = DEFAULT_DB;
+         return DEFAULT_DB;
       }
-      const parsed = JSON.parse(stored);
-      // Merge with default to ensure structure exists if schema changes
-      dbCache = { ...DEFAULT_DB, ...parsed };
-      return dbCache;
+
+      // Merge with default to ensure structure
+      dbCache = { ...DEFAULT_DB, ...data };
+      console.log("[DB] Loaded from file system", dbCache);
+      return dbCache!;
     } catch (e) {
-      console.error("Failed to load DB", e);
+      console.error("Failed to load DB from file system", e);
       return DEFAULT_DB;
     }
   },
 
   /**
-   * Persists the database to local storage and updates memory cache.
+   * Persists the database to the file system API.
    */
-  saveRaw: (data: Partial<DatabaseSchema>) => {
+  saveAsync: async (data: Partial<DatabaseSchema>) => {
     try {
-      const current = DB.loadRaw();
+      // Ensure we have the latest state in cache or fetch it first?
+      // For simplicity, we assume cache is populated if we are saving.
+      const current = dbCache || DEFAULT_DB;
       const updated = { ...current, ...data, lastUpdated: Date.now() };
       
       // Update cache
       dbCache = updated;
       
       // Persist
-      localStorage.setItem(DB_KEY, JSON.stringify(updated));
+      console.log("[DB] Saving to file system", updated);
+      await fetch('/api/db', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
     } catch (e) {
-      console.error("Failed to save DB", e);
+      console.error("Failed to save DB to file system", e);
     }
   },
 
-  // --- Entity Accessors ---
+  // --- Entity Accessors (Async) ---
 
-  getCards: (): CreditCard[] => {
-    const db = DB.loadRaw();
+  getCards: async (): Promise<CreditCard[]> => {
+    const db = await DB.loadAsync();
     return Object.values(db.cards || {});
   },
 
-  saveCards: (cards: CreditCard[]) => {
+  saveCards: async (cards: CreditCard[]) => {
     const cardDict: Record<string, CreditCard> = {};
     cards.forEach(c => {
       cardDict[c.id] = c;
     });
-    DB.saveRaw({ cards: cardDict });
+    await DB.saveAsync({ cards: cardDict });
   },
 
-  getProfile: (): FinancialProfile => {
-    const db = DB.loadRaw();
+  getProfile: async (): Promise<FinancialProfile> => {
+    const db = await DB.loadAsync();
     return db.profile || DEFAULT_DB.profile;
   },
 
-  saveProfile: (profile: FinancialProfile) => {
-    DB.saveRaw({ profile });
+  saveProfile: async (profile: FinancialProfile) => {
+    await DB.saveAsync({ profile });
   }
 };

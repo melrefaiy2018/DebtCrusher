@@ -9,13 +9,33 @@ import StrategyResults from './components/StrategyResults';
 import { LayoutDashboard, TrendingDown, TrendingUp, Scale, Bot } from 'lucide-react';
 
 const App: React.FC = () => {
-  // Initialize State from DB
-  const [profile, setProfileState] = useState<FinancialProfile>(() => DB.getProfile());
-  const [cards, setCardsState] = useState<CreditCard[]>(() => DB.getCards());
+  // Initialize State
+  const [profile, setProfileState] = useState<FinancialProfile>({ monthlyNetIncome: 0 });
+  const [cards, setCardsState] = useState<CreditCard[]>([]);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const [strategy, setStrategy] = useState<PaymentStrategy>('avalanche');
   const [result, setResult] = useState<OptimizationResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Load Data on Mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [loadedProfile, loadedCards] = await Promise.all([
+          DB.getProfile(),
+          DB.getCards()
+        ]);
+        setProfileState(loadedProfile);
+        setCardsState(loadedCards);
+      } catch (e) {
+        console.error("Failed to load initial data", e);
+      } finally {
+        setIsDataLoaded(true);
+      }
+    };
+    loadData();
+  }, []);
 
   // Wrappers to sync State with DB
   const setProfile = (newProfile: FinancialProfile) => {
@@ -30,6 +50,8 @@ const App: React.FC = () => {
 
   // Logic Engine
   const runOptimization = useCallback(async () => {
+    if (!isDataLoaded) return; // Don't run if data isn't ready
+
     if (cards.length === 0) {
         setResult(null);
         return;
