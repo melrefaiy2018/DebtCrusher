@@ -2,39 +2,31 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { CreditCard, FinancialProfile, PaymentStrategy, OptimizationResult } from './types';
 import { calculateAllocations } from './services/solver';
 import { getLLMRecommendations } from './services/lmStudio';
+import { DB } from './services/db';
 import CardInput from './components/CardInput';
 import FinancialInput from './components/FinancialInput';
 import StrategyResults from './components/StrategyResults';
 import { LayoutDashboard, TrendingDown, TrendingUp, Scale, Bot } from 'lucide-react';
 
-const INITIAL_PROFILE: FinancialProfile = {
-  monthlyNetIncome: 0
-};
-
 const App: React.FC = () => {
-  // State
-  const [profile, setProfile] = useState<FinancialProfile>(() => {
-    const saved = localStorage.getItem('dc_profile');
-    return saved ? JSON.parse(saved) : INITIAL_PROFILE;
-  });
-
-  const [cards, setCards] = useState<CreditCard[]>(() => {
-    const saved = localStorage.getItem('dc_cards');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Initialize State from DB
+  const [profile, setProfileState] = useState<FinancialProfile>(() => DB.getProfile());
+  const [cards, setCardsState] = useState<CreditCard[]>(() => DB.getCards());
 
   const [strategy, setStrategy] = useState<PaymentStrategy>('avalanche');
   const [result, setResult] = useState<OptimizationResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Persistence
-  useEffect(() => {
-    localStorage.setItem('dc_profile', JSON.stringify(profile));
-  }, [profile]);
+  // Wrappers to sync State with DB
+  const setProfile = (newProfile: FinancialProfile) => {
+    setProfileState(newProfile);
+    DB.saveProfile(newProfile);
+  };
 
-  useEffect(() => {
-    localStorage.setItem('dc_cards', JSON.stringify(cards));
-  }, [cards]);
+  const setCards = (newCards: CreditCard[]) => {
+    setCardsState(newCards);
+    DB.saveCards(newCards);
+  };
 
   // Logic Engine
   const runOptimization = useCallback(async () => {
