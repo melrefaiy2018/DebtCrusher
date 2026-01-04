@@ -28,6 +28,8 @@ const StrategyResults: React.FC<Props> = ({ result, cards, isLoading }) => {
       Extra: alloc.extraPayment,
       Total: alloc.totalPayment,
       Remaining: alloc.remainingBalanceAfterPayment,
+      Available: alloc.projectedAvailableCredit,
+      SafeSpend: alloc.maxSafeSpend,
       Notes: alloc.notes,
       balance: card?.balance || 0
     };
@@ -44,7 +46,9 @@ const StrategyResults: React.FC<Props> = ({ result, cards, isLoading }) => {
              <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
              <div>
                <p className="font-bold">Insufficient Funds</p>
-               <p className="text-sm">Your income cannot cover the minimum payments. Please reduce expenses or contact creditors.</p>
+               <p className="text-sm">
+                 Your income cannot cover the minimum payments. You are short by <strong>${(result.totalMinPayments - result.totalAvailableForDebt).toFixed(2)}</strong>. Please reduce expenses or contact creditors.
+               </p>
              </div>
            </div>
         ) : (
@@ -92,6 +96,8 @@ const StrategyResults: React.FC<Props> = ({ result, cards, isLoading }) => {
               <th className="px-4 py-3 text-right">Balance</th>
               <th className="px-4 py-3 text-right">Min Pay</th>
               <th className="px-4 py-3 text-right text-brand-600 font-bold">Recommended</th>
+              <th className="px-4 py-3 text-right text-emerald-600">Proj. Available</th>
+              <th className="px-4 py-3 text-right text-blue-600" title="Max spend to maintain current balance">Safe Spend</th>
               <th className="px-4 py-3 text-right text-slate-400">Projected Rem.</th>
             </tr>
           </thead>
@@ -107,6 +113,8 @@ const StrategyResults: React.FC<Props> = ({ result, cards, isLoading }) => {
                 <td className="px-4 py-3 text-right font-bold text-brand-600 bg-brand-50/30">
                   ${row.Total.toLocaleString()}
                 </td>
+                <td className="px-4 py-3 text-right text-emerald-600 font-medium">${row.Available.toLocaleString()}</td>
+                <td className="px-4 py-3 text-right text-blue-600 font-medium">${row.SafeSpend.toLocaleString()}</td>
                 <td className="px-4 py-3 text-right text-slate-400">${row.Remaining.toLocaleString()}</td>
               </tr>
             ))}

@@ -29,6 +29,9 @@ export const calculateAllocations = (
       extraPayment: 0,
       totalPayment: card.minPayment,
       remainingBalanceAfterPayment: Math.max(0, card.balance - card.minPayment),
+      projectedAvailableCredit: 0, // Will calculate at end
+      projectedInterest: 0, // Will calculate at end
+      maxSafeSpend: 0 // Will calculate at end
     };
   });
 
@@ -82,6 +85,44 @@ export const calculateAllocations = (
       remainingCash = cashToDistribute;
     }
   }
+
+  // Final pass to calculate projected metrics
+  recommendations.forEach(rec => {
+    const card = cards.find(c => c.id === rec.cardId);
+    if (card) {
+      // Calculate Interest
+      const calculatedInterest = (card.balance * (card.apr / 100)) / 12;
+      const monthlyInterest = card.monthlyInterestAmount !== undefined && card.monthlyInterestAmount > 0 
+        ? card.monthlyInterestAmount 
+        : calculatedInterest;
+      
+      rec.projectedInterest = monthlyInterest;
+
+      // Update Remaining Balance with Interest
+      // New Balance = Old Balance - Payment + Interest
+      rec.remainingBalanceAfterPayment = Math.max(0, card.balance - rec.totalPayment + monthlyInterest);
+
+      // Projected Available Credit
+      const limit = card.creditLimit || 0;
+      rec.projectedAvailableCredit = Math.max(0, limit - rec.remainingBalanceAfterPayment);
+
+      // Max Safe Spend (to maintain current balance level)
+      // Logic: NewSpend <= Payment - Interest
+      const safeSpend = rec.totalPayment - monthlyInterest;
+      rec.maxSafeSpend = Math.max(0, Math.floor(safeSpend));
+    }
+  });
+
+  // Check for high utilization
+  cards.forEach(card => {
+    const limit = card.creditLimit || 0;
+    if (limit > 0) {
+      const utilization = (card.balance / limit) * 100;
+      if (utilization > 30) {
+        warnings.push(`High Utilization: ${card.name} is at ${utilization.toFixed(1)}% utilization. Aim for <30% for better credit score.`);
+      }
+    }
+  });
 
   return {
     allocations: recommendations,

@@ -2,7 +2,9 @@ export interface CreditCard {
   id: string;
   name: string;
   balance: number;
+  creditLimit: number;
   apr: number;
+  monthlyInterestAmount?: number;
   minPayment: number;
   dueDate: string;
 }
@@ -19,6 +21,9 @@ export interface CardRecommendation {
   extraPayment: number;
   totalPayment: number;
   remainingBalanceAfterPayment: number;
+  projectedAvailableCredit: number;
+  projectedInterest: number;
+  maxSafeSpend: number;
   notes?: string;
 }
 

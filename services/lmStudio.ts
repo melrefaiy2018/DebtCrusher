@@ -81,12 +81,31 @@ export const getLLMRecommendations = async (
         const safePayment = Math.max(rawPayment, card.minPayment);
         calculatedUsedCash += safePayment;
 
+        // Calculate Interest
+        const calculatedInterest = (card.balance * (card.apr / 100)) / 12;
+        const monthlyInterest = card.monthlyInterestAmount !== undefined && card.monthlyInterestAmount > 0 
+          ? card.monthlyInterestAmount 
+          : calculatedInterest;
+
+        // Update Remaining Balance with Interest
+        const remainingBalanceAfterPayment = Math.max(0, card.balance - safePayment + monthlyInterest);
+        
+        // Calculate projected metrics
+        const limit = card.creditLimit || 0;
+        const projectedAvailableCredit = Math.max(0, limit - remainingBalanceAfterPayment);
+        
+        const safeSpend = safePayment - monthlyInterest;
+        const maxSafeSpend = Math.max(0, Math.floor(safeSpend));
+
         return {
             cardId: card.id,
             minPayment: card.minPayment,
             extraPayment: safePayment - card.minPayment,
             totalPayment: safePayment,
-            remainingBalanceAfterPayment: Math.max(0, card.balance - safePayment),
+            remainingBalanceAfterPayment,
+            projectedAvailableCredit,
+            projectedInterest: monthlyInterest,
+            maxSafeSpend,
             notes: llmRec?.reasoning || 'AI Recommended'
         };
     });

@@ -10,7 +10,9 @@ interface Props {
 const emptyCard: Omit<CreditCard, 'id'> = {
   name: '',
   balance: 0,
+  creditLimit: 0,
   apr: 0,
+  monthlyInterestAmount: 0,
   minPayment: 0,
   dueDate: ''
 };
@@ -101,6 +103,16 @@ const CardInput: React.FC<Props> = ({ cards, setCards }) => {
               />
             </div>
             <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Credit Limit ($)</label>
+              <input 
+                type="number" 
+                value={newCard.creditLimit || ''}
+                onChange={e => setNewCard({...newCard, creditLimit: parseFloat(e.target.value) || 0})}
+                className="w-full p-2 border rounded text-sm"
+                placeholder="0.00"
+              />
+            </div>
+            <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">APR (%)</label>
               <input 
                 type="number" 
@@ -108,6 +120,16 @@ const CardInput: React.FC<Props> = ({ cards, setCards }) => {
                 onChange={e => setNewCard({...newCard, apr: parseFloat(e.target.value) || 0})}
                 className="w-full p-2 border rounded text-sm"
                 placeholder="24.99"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Monthly Interest ($)</label>
+              <input 
+                type="number" 
+                value={newCard.monthlyInterestAmount || ''}
+                onChange={e => setNewCard({...newCard, monthlyInterestAmount: parseFloat(e.target.value) || 0})}
+                className="w-full p-2 border rounded text-sm"
+                placeholder="Optional (Auto-calc if empty)"
               />
             </div>
             <div>
@@ -173,6 +195,15 @@ const CardInput: React.FC<Props> = ({ cards, setCards }) => {
                             className="w-full p-1.5 border border-slate-300 rounded text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
                         />
                     </div>
+                    <div className="col-span-2 md:col-span-1">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Credit Limit</label>
+                        <input 
+                            type="number" 
+                            value={editForm.creditLimit}
+                            onChange={e => setEditForm({...editForm, creditLimit: parseFloat(e.target.value) || 0})}
+                            className="w-full p-1.5 border border-slate-300 rounded text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                        />
+                    </div>
                     <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">APR (%)</label>
                         <input 
@@ -180,6 +211,16 @@ const CardInput: React.FC<Props> = ({ cards, setCards }) => {
                             value={editForm.apr}
                             onChange={e => setEditForm({...editForm, apr: parseFloat(e.target.value) || 0})}
                             className="w-full p-1.5 border border-slate-300 rounded text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Interest ($)</label>
+                        <input 
+                            type="number" 
+                            value={editForm.monthlyInterestAmount || ''}
+                            onChange={e => setEditForm({...editForm, monthlyInterestAmount: parseFloat(e.target.value) || 0})}
+                            className="w-full p-1.5 border border-slate-300 rounded text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                            placeholder="Auto"
                         />
                     </div>
                     <div>
@@ -224,6 +265,10 @@ const CardInput: React.FC<Props> = ({ cards, setCards }) => {
                   <div className="text-xs text-slate-500">
                     <span className="block text-[10px] uppercase font-bold text-slate-400">Balance</span>
                     ${card.balance.toLocaleString()}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    <span className="block text-[10px] uppercase font-bold text-slate-400">Available</span>
+                    ${(Math.max(0, (card.creditLimit || 0) - card.balance)).toLocaleString()}
                   </div>
                   <div className="text-xs text-slate-500">
                     <span className="block text-[10px] uppercase font-bold text-slate-400">Min Pay</span>
