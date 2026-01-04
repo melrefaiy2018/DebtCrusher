@@ -11,13 +11,27 @@
           extend: {
             colors: {
               brand: {
-                50: '#f0fdf4',
-                100: '#dcfce7',
-                500: '#22c55e',
-                600: '#16a34a',
-                700: '#15803d',
-                900: '#14532d',
+                50: '#ECFDF5',
+                100: '#D1FAE5',
+                500: '#10B981',
+                600: '#059669',
+                700: '#047857',
+              },
+              neutral: {
+                bg: '#F8FAFC',
+                card: '#FFFFFF',
+                border: '#E2E8F0',
+                text: '#0F172A',
+                secondary: '#475569',
+                muted: '#64748B',
+              },
+              warning: {
+                50: '#FFF7ED',
+                500: '#F59E0B',
               }
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif']
             }
           }
         }
@@ -35,7 +49,7 @@
 }
 </script>
 </head>
-  <body class="bg-slate-50 text-slate-800 antialiased">
+  <body class="bg-neutral-bg text-neutral-text antialiased">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
