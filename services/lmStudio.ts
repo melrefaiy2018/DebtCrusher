@@ -1,7 +1,7 @@
 import { CreditCard, FinancialProfile, OptimizationResult, PaymentStrategy, LLMPayload } from '../types';
 import { calculateAllocations } from './solver'; // Used for fallback validation
 
-const LM_STUDIO_ENDPOINT = 'http://localhost:1234/v1/chat/completions';
+const LM_STUDIO_ENDPOINT = 'http://192.168.1.120:1234/v1/chat/completions';
 
 const SYSTEM_PROMPT = `
 You are an expert financial algorithm designed to optimize debt repayment.
