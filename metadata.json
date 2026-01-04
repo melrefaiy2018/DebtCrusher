@@ -1,0 +1,5 @@
+{
+  "name": "DebtCrusher",
+  "description": "A smart personal finance dashboard that optimizes credit card payoff strategies using local algorithmic logic or a local LLM via LM Studio.",
+  "requestFramePermissions": []
+}
