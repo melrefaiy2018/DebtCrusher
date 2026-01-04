@@ -3,7 +3,8 @@ import { CreditCard, FinancialProfile, OptimizationResult, CardRecommendation, P
 export const calculateAllocations = (
   cards: CreditCard[],
   profile: FinancialProfile,
-  strategy: PaymentStrategy
+  strategy: PaymentStrategy,
+  projectionMonths: number = 6
 ): OptimizationResult => {
   // The user input 'monthlyNetIncome' is now treated as the total budget for debt.
   const totalAvailableForDebt = profile.monthlyNetIncome;
@@ -124,6 +125,8 @@ export const calculateAllocations = (
     }
   });
 
+  const projections = generateProjections(cards, totalAvailableForDebt, strategy, projectionMonths);
+
   return {
     allocations: recommendations,
     totalAvailableForDebt,
@@ -131,6 +134,97 @@ export const calculateAllocations = (
     remainingCash,
     strategyUsed: strategy,
     isValid,
-    warnings
+    warnings,
+    projections
   };
+};
+
+export const generateProjections = (
+  initialCards: CreditCard[],
+  monthlyBudgetTotal: number,
+  strategy: PaymentStrategy,
+  months: number = 6
+) => {
+  const projections: { month: number; totalBalance: number; totalInterestPaid: number; cardBalances: Record<string, number> }[] = [];
+  
+  // Clone cards for simulation
+  let simCards = initialCards.map(c => ({ ...c }));
+  let simMonth = 0;
+  const MAX_MONTHS = months;
+
+  // Initial state (Month 0)
+  const initialBalances: Record<string, number> = {};
+  simCards.forEach(c => initialBalances[c.id] = c.balance);
+
+  projections.push({
+    month: 0,
+    totalBalance: simCards.reduce((sum, c) => sum + c.balance, 0),
+    totalInterestPaid: 0,
+    cardBalances: initialBalances
+  });
+
+  while (simMonth < MAX_MONTHS) {
+    simMonth++;
+    let monthlyInterestTotal = 0;
+    let currentMonthBudget = monthlyBudgetTotal;
+
+    // 1. Apply Interest & Min Payments
+    
+    // First pass: Add Interest
+    simCards.forEach(card => {
+        if (card.balance <= 0) return;
+        const interest = (card.balance * (card.apr / 100)) / 12;
+        monthlyInterestTotal += interest;
+        card.balance += interest;
+    });
+
+    // Second pass: Pay Minimums
+    simCards.forEach(card => {
+        if (card.balance <= 0) return;
+        const minPay = Math.min(card.balance, card.minPayment);
+        card.balance -= minPay;
+        currentMonthBudget -= minPay;
+    });
+
+    // 3. Distribute Surplus
+    if (currentMonthBudget > 0) {
+        if (strategy === 'even') {
+            const activeCards = simCards.filter(c => c.balance > 0);
+            if (activeCards.length > 0) {
+                const split = currentMonthBudget / activeCards.length;
+                activeCards.forEach(c => {
+                    const pay = Math.min(c.balance, split);
+                    c.balance -= pay;
+                    currentMonthBudget -= pay;
+                });
+            }
+        } else {
+            // Avalanche / Snowball / LLM (fallback to Avalanche for projection)
+            const sortStrategy = strategy === 'llm' ? 'avalanche' : strategy;
+            
+            const sortedSim = [...simCards].filter(c => c.balance > 0).sort((a, b) => {
+                 if (sortStrategy === 'avalanche') return b.apr - a.apr;
+                 return a.balance - b.balance;
+            });
+
+            for (const card of sortedSim) {
+                if (currentMonthBudget <= 0.01) break;
+                const pay = Math.min(card.balance, currentMonthBudget);
+                card.balance -= pay;
+                currentMonthBudget -= pay;
+            }
+        }
+    }
+
+    const currentBalances: Record<string, number> = {};
+    simCards.forEach(c => currentBalances[c.id] = Math.max(0, c.balance));
+
+    projections.push({
+        month: simMonth,
+        totalBalance: Math.max(0, simCards.reduce((sum, c) => sum + c.balance, 0)),
+        totalInterestPaid: monthlyInterestTotal,
+        cardBalances: currentBalances
+    });
+  }
+  return projections;
 };

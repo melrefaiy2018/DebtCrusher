@@ -1,6 +1,6 @@
 import React from 'react';
 import { CreditCard, OptimizationResult } from '../types';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, AreaChart, Area, CartesianGrid, LineChart, Line } from 'recharts';
 import { AlertTriangle, CheckCircle, BrainCircuit } from 'lucide-react';
 
 interface Props {
@@ -8,6 +8,8 @@ interface Props {
   cards: CreditCard[];
   isLoading: boolean;
 }
+
+const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe', '#00C49F', '#FFBB28', '#FF8042'];
 
 const StrategyResults: React.FC<Props> = ({ result, cards, isLoading }) => {
   if (isLoading) {
@@ -86,6 +88,72 @@ const StrategyResults: React.FC<Props> = ({ result, cards, isLoading }) => {
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Projection Chart */}
+      {result.projections && result.projections.length > 0 && (
+        <div className="h-64 w-full border-t border-slate-100 pt-6">
+          <h3 className="text-sm font-semibold text-slate-500 mb-4">Total Debt Projection</h3>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={result.projections} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="month" tickFormatter={(val) => `Month ${val}`} tick={{fontSize: 12}} />
+              <YAxis tickFormatter={(val) => `$${(val/1000).toFixed(1)}k`} tick={{fontSize: 12}} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <Tooltip 
+                formatter={(value: number) => [`$${Math.round(value).toLocaleString()}`, 'Total Balance']}
+                labelFormatter={(label) => `Month ${label}`}
+                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+              />
+              <Area type="monotone" dataKey="totalBalance" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorBalance)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Individual Card Projection Chart */}
+      {result.projections && result.projections.length > 0 && (
+        <div className="h-64 w-full border-t border-slate-100 pt-6">
+          <h3 className="text-sm font-semibold text-slate-500 mb-4">Individual Card Projections</h3>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={result.projections} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <XAxis dataKey="month" tickFormatter={(val) => `Month ${val}`} tick={{fontSize: 12}} />
+              <YAxis tickFormatter={(val) => `$${(val/1000).toFixed(1)}k`} tick={{fontSize: 12}} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <Tooltip 
+                formatter={(value: number, name: string) => {
+                   // Try to find card name if key is cardBalances.id
+                   // name comes in as "cardBalances.someId"
+                   const id = name.split('.')[1];
+                   const cardName = cards.find(c => c.id === id)?.name || name;
+                   return [`$${Math.round(value).toLocaleString()}`, cardName];
+                }}
+                labelFormatter={(label) => `Month ${label}`}
+                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+              />
+              <Legend formatter={(value) => {
+                  const id = value.split('.')[1];
+                  return cards.find(c => c.id === id)?.name || value;
+              }}/>
+              {cards.map((card, index) => (
+                <Line 
+                  key={card.id}
+                  type="monotone" 
+                  dataKey={`cardBalances.${card.id}`} 
+                  stroke={COLORS[index % COLORS.length]} 
+                  strokeWidth={2}
+                  dot={false}
+                  name={`cardBalances.${card.id}`}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* Table */}
       <div className="overflow-x-auto">

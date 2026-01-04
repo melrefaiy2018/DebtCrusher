@@ -11,6 +11,7 @@ export interface CreditCard {
 
 export interface FinancialProfile {
   monthlyNetIncome: number;
+  strategy?: PaymentStrategy;
 }
 
 export type PaymentStrategy = 'avalanche' | 'snowball' | 'even' | 'llm';
@@ -27,6 +28,13 @@ export interface CardRecommendation {
   notes?: string;
 }
 
+export interface ProjectionPoint {
+  month: number;
+  totalBalance: number;
+  totalInterestPaid: number;
+  cardBalances: Record<string, number>;
+}
+
 export interface OptimizationResult {
   allocations: CardRecommendation[];
   totalAvailableForDebt: number;
@@ -35,10 +43,12 @@ export interface OptimizationResult {
   strategyUsed: PaymentStrategy;
   isValid: boolean;
   warnings: string[];
+  projections: ProjectionPoint[];
 }
 
 export interface LLMPayload {
   profile: FinancialProfile;
   cards: CreditCard[];
   availableForDebt: number;
+  strategy: PaymentStrategy;
 }

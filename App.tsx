@@ -15,6 +15,7 @@ const App: React.FC = () => {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const [strategy, setStrategy] = useState<PaymentStrategy>('avalanche');
+  const [projectionMonths, setProjectionMonths] = useState<number>(6);
   const [result, setResult] = useState<OptimizationResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -61,13 +62,13 @@ const App: React.FC = () => {
 
     try {
       if (strategy === 'llm') {
-        const aiResult = await getLLMRecommendations(cards, profile);
+        const aiResult = await getLLMRecommendations(cards, profile, projectionMonths);
         setResult(aiResult);
       } else {
         // Local deterministic calculation
         // Small timeout to allow UI to show loading state for better UX feeling
         await new Promise(r => setTimeout(r, 400)); 
-        const algoResult = calculateAllocations(cards, profile, strategy);
+        const algoResult = calculateAllocations(cards, profile, strategy, projectionMonths);
         setResult(algoResult);
       }
     } catch (e) {
@@ -75,7 +76,7 @@ const App: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [cards, profile, strategy]);
+  }, [cards, profile, strategy, projectionMonths]);
 
   // Debounced auto-run for local strategies, manual for LLM
   useEffect(() => {
@@ -85,7 +86,7 @@ const App: React.FC = () => {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [profile, cards, strategy, runOptimization]);
+  }, [profile, cards, strategy, projectionMonths, runOptimization]);
 
   const handleManualRun = () => {
     runOptimization();
@@ -119,39 +120,56 @@ const App: React.FC = () => {
             <p className="text-slate-500">Manage your income and optimize your payoff plan.</p>
           </div>
           
-          <div className="bg-white p-1 rounded-lg border border-slate-200 shadow-sm flex overflow-hidden">
-            <button
-              onClick={() => setStrategy('avalanche')}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                strategy === 'avalanche' ? 'bg-brand-50 text-brand-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'
-              }`}
-            >
-              <TrendingDown size={16} /> Avalanche (APR)
-            </button>
-            <button
-              onClick={() => setStrategy('snowball')}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                strategy === 'snowball' ? 'bg-brand-50 text-brand-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'
-              }`}
-            >
-              <TrendingUp size={16} /> Snowball (Bal)
-            </button>
-            <button
-              onClick={() => setStrategy('even')}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                strategy === 'even' ? 'bg-brand-50 text-brand-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'
-              }`}
-            >
-              <Scale size={16} /> Even Split
-            </button>
-             <button
-              onClick={() => setStrategy('llm')}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                strategy === 'llm' ? 'bg-purple-50 text-purple-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'
-              }`}
-            >
-              <Bot size={16} /> AI Assistant
-            </button>
+          <div className="flex flex-col sm:flex-row gap-4 items-end sm:items-center">
+            <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-slate-200 shadow-sm px-3">
+               <span className="text-xs font-bold text-slate-500 uppercase">Projection:</span>
+               <select 
+                 value={projectionMonths}
+                 onChange={(e) => setProjectionMonths(Number(e.target.value))}
+                 className="text-sm font-medium text-slate-700 bg-transparent outline-none cursor-pointer"
+               >
+                 <option value={3}>3 Months</option>
+                 <option value={6}>6 Months</option>
+                 <option value={12}>1 Year</option>
+                 <option value={24}>2 Years</option>
+                 <option value={36}>3 Years</option>
+               </select>
+            </div>
+
+            <div className="bg-white p-1 rounded-lg border border-slate-200 shadow-sm flex overflow-hidden">
+              <button
+                onClick={() => setStrategy('avalanche')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                  strategy === 'avalanche' ? 'bg-brand-50 text-brand-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <TrendingDown size={16} /> Avalanche (APR)
+              </button>
+              <button
+                onClick={() => setStrategy('snowball')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                  strategy === 'snowball' ? 'bg-brand-50 text-brand-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <TrendingUp size={16} /> Snowball (Bal)
+              </button>
+              <button
+                onClick={() => setStrategy('even')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                  strategy === 'even' ? 'bg-brand-50 text-brand-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <Scale size={16} /> Even Split
+              </button>
+              <button
+                onClick={() => setStrategy('llm')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                  strategy === 'llm' ? 'bg-purple-50 text-purple-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <Bot size={16} /> AI Assistant
+              </button>
+            </div>
           </div>
         </div>
 
