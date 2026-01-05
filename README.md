@@ -473,9 +473,9 @@ If you use DebtCrusher in academic research, please cite:
 ```bibtex
 @software{debtcrusher2026,
   title={DebtCrusher: An Intelligent Credit Card Debt Optimization Platform},
-  author={Your Name},
+  author={Mohamed Elrefaiy},
   year={2026},
-  url={https://github.com/yourusername/DebtCrusher},
+  url={https://github.com/melrefaiy2018/DebtCrusher},
   version={0.0.0}
 }
 ```
@@ -490,8 +490,8 @@ If you use DebtCrusher in academic research, please cite:
 ## Contact
 
 For questions, suggestions, or collaboration opportunities:
-- GitHub Issues: [https://github.com/yourusername/DebtCrusher/issues](https://github.com/yourusername/DebtCrusher/issues)
-- Email: your.email@example.com
+- GitHub Issues: [https://github.com/melrefaiy2018/DebtCrusher/issues](https://github.com/melrefaiy2018/DebtCrusher/issues)
+- Email: melrefaiy@utexas.edu
 
 ---
 
