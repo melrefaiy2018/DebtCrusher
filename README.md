@@ -188,7 +188,7 @@ for each month in [1, N]:
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/DebtCrusher.git
+git clone https://github.com/melrefaiy2018/DebtCrusher.git
 cd DebtCrusher
 ```
 
